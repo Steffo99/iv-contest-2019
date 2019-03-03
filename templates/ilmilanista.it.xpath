@@ -1,0 +1,65 @@
+~version: "2.0"
+
+$title: //h1[@itemprop="headline"]
+$body: //div[has-class("entry-content-text")]
+
+?exists: $title
+!exists: $body
+
+@remove: $body//iframe[starts-with(@src, "https://www.dailymotion.com")]
+
+title: $title
+body: $body
+author: //a[@rel="author"]
+author_url: //a[@rel="author"]/@href
+
+$postimage: //img[has-class("wp-post-image")]
+cover: $postimage/@data-original
+image_url: $postimage/@data-original
+@set_attr("src", @data-original): //img
+@prepend_to($body): $postimage
+@remove: //img[has-class("lazystart")]
+
+#$related_origin: $body//p
+#$related_content: $related_origin//a[starts-with(@href, "http://www.ilmilanista.it")]
+#?exists: $related_content
+#@append_to(($related_origin)[last()]): $related_content
+#@detach: $related_content/a
+#?true
+#@after(<related>): $related_origin
+#$related: $related_origin/../related
+#@append(<h1>, "text", ./../p/a/span): $related
+#@append(@text): $related/h1
+#@append(<a>, "href", ./../p/a/@href): $related
+
+@remove: $body//p//a[starts-with(@href, "http://www.ilmilanista.it")]
+@remove: $body//div[has-class("wp-poll-ajax")]
+@remove: $body//div[has-class("entry-signature")]
+@remove: $body//div[has-class("entry-social")]
+@remove: $body//div[has-class("lista_tag")]
+@remove: $body//div[has-class("entry-comment-calltoaction")]
+@remove: $body//div[has-class("entry-comment")]
+
+@map($body//p) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+  @if($p//related) {
+    <div>: $p
+  }
+}
+
+@remove: $body//p[string-length(normalize-space(text())) = 1]
+
+@unsupported: $body//native-video-gazzanet
+@unsupported: $body//div[has-class("navigation-bar")]
+
+?exists: //h1[has-class("title-tag-h1")]
+title: //h1[has-class("title-tag-h1")]
+
+?exists: //span[has-class("lastnews")]
+title: //span[has-class("lastnews")]

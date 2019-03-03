@@ -1,0 +1,109 @@
+~version: "2.0"
+
+?not_exists: //div[has-class("sd-gallery-slides-wrapper")]
+
+@prepend(<trash>): /html
+$trash: //trash
+
+# Main part
+$story: //div[starts-with(@class, "index_story")]
+title: $story//h1[starts-with(@class, "index_storyHeadlineText")]
+$body: ($story//div[starts-with(@class, "StoryText_storyText")])[0]
+body: $body
+
+# Add all photos link
+$allphotosover: $story//div[starts-with(@class, "index_thumbnailOverlay")]
+@if( $allphotosover ) {
+  @after(<allphotos>, "id", "__all_photos", "href", ./../@href): $allphotosover
+  $allphotos: $allphotosover/../allphotos
+  @append("View all photos"): $allphotos
+  @prepend_to($body): $allphotos
+  <a>: $allphotos
+}
+
+# Load the jwblob
+# Makes available: $images $captions $videos
+$jwblob: /html/head/script[@data-prerender="facade"]
+@json_to_xml: $jwblob/text()
+$richblob: $jwblob/xml/content/component-head_news3-story-v1-01/story/richText
+@replace("{\/p}", "</p>"): $richblob
+@replace("{\/a}", "</a>"): $richblob
+@replace("{\/sd-embed}", "</sd-embed>"): $richblob
+@html_to_dom: $richblob
+$images: $@//sd-embed
+@html_to_dom: $images/@data-caption
+$captions: $@
+@urldecode: $captions
+$videos: $jwblob/xml/content/component-head_news3-story-v1-01/story/videos
+
+# Add cover to article, as cover photos don't support captions
+$topphoto: $story//img[starts-with(@class, "index_mainImage")]
+@prepend(<slideshow>, "id", "__hero"): $body
+$hero: $body/slideshow[@id="__hero"]
+@prepend_to($hero): $topphoto
+
+# Add subphotos to the hero slideshow
+$extrathumbnails: $story//img[starts-with(@class, "index_thumbnail")]
+@append_to($hero): $extrathumbnails
+
+# Add captions to the first slideshow
+@debug: $captions
+$caption: ($captions)[1]
+@append(<figcaption>, "__text", .): $caption
+@append(@__text): $caption/figcaption
+@append_to($hero): $caption/figcaption
+
+# Actually support JWPlayer
+$video: ($videos/item)[1]
+$mp4url: $video/mp4Url
+@prepend(<video>, "src", ./text()): $mp4url
+@prepend_to($hero): $mp4url/video
+
+# Inline videos
+$storyembeds: $story//div[starts-with(@class, "index_storyEmbed")]
+@map( $storyembeds ) {
+  $div: $@
+  $items: $videos/item
+  $video: ($items)[1]
+  $mp4url: $video/mp4Url
+  @prepend(<video>, "src", .): $mp4url
+  $videoelement: $mp4url/video
+  @wrap(<figure>): $videoelement
+  $figureelement: $videoelement/..
+  #@after(<figcaption>, "text", ./../../../alt): $videoelement
+  #@append(@text): $figureelement/figcaption
+  @prepend_to($div): $figureelement
+  @remove: $video
+}
+
+# Add captions
+
+
+
+# Unsupport Scribd
+@unsupported: $story//iframe[has-class("scribd_iframe_embed")]
+
+# Unsupport polls
+@unsupported: $story//div[has-class("mv-widget")]
+
+# Remove newsletter signup
+@remove: //div[@id="mc_embed_signup"]
+
+# Galleries
+?exists: //div[has-class("sd-gallery-slides-wrapper")]
+
+# Create empty container
+@prepend(<div>, "id", "__photos_container"): //body
+$main: //div[@id="__photos_container"]
+$photos: //div[starts-with(@id, "photo-")]/img
+@set_attr("alt", ./../@data-caption): $photos
+@set_attr("__title", ./../@data-title): $photos
+@wrap(<figure>): $photos
+$figures: //figure
+#@append(<figcaption>, "text", ./img/@alt): $figures
+@append(@text): $figures/figcaption
+@debug: $figures
+@append_to($main): $figures
+$firstphoto: ($photos)[1]
+title: $firstphoto/@__title
+body: $main

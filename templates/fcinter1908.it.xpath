@@ -1,0 +1,57 @@
+~version: "2.0"
+?path_not: /competizioni-calcio/?
+!path_not: /quiz/.*
+$author://div[has-class("bar-author")]/div
+$body://main//div[has-class("entry-content-text")]
+
+title: //main//h1[has-class("pf-title")]
+body: $body
+author: $author/b
+author_url: $author/a/@href
+
+$postimage: //img[has-class("wp-post-image")]
+cover: $postimage/@data-original
+image_url: $postimage/@data-original
+
+@append_to($body): //native-video-gazzanet
+
+@remove: //a[@itemprop = "item"]
+@remove: //span[@itemprop="author"]
+@remove: $author/..
+@remove: //div[has-class("entry-date-content")]
+@remove: //div[@id="titleForSmall"]
+@remove: $body//div[has-class("wp-poll-ajax")]
+@remove: $body//div[has-class("entry-signature")]
+@remove: $body//div[has-class("entry-social")]
+@remove: $body//div[has-class("lista_tag")]
+@remove: $body//div[has-class("entry-comment-calltoaction")]
+@remove: $body//div[has-class("entry-comment")]
+
+@unsupported: $body//div[@id="widget-eventi-live"]
+@unsupported: //native-video-gazzanet
+
+#image handling
+@map(//a/img/..) {
+  $p: $@
+  @if($p/img/@data-original) {
+    @after(<img>, src, ./img/@data-original, class, ./img/class): $p
+  }
+  @if($p/img/@src) {
+    @after(<img>, src, ./img/@src, class, ./img/class): $p
+  }
+}
+@remove: //a/img/..
+
+@map(//div//p) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+}
+@if($postimage){
+  @before(<img>, src, $postimage/@data-original): $body//p[1]
+}
+@remove: //p[string-length(normalize-space(text())) = 1]

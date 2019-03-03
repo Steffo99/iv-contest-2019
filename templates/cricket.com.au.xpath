@@ -1,0 +1,27 @@
+~version: "2.0"
+$body: //div[has-class("news-content")]
+$date: //div[has-class("author-content")]//p[starts-with(@class, "Date")]
+
+title: //h1[has-class("news-banner__title")]
+subtitle: //p[has-class("news-banner__intro-text")] 
+author: //p[has-class("author-name")]
+author_url: //div[has-class("author-content")]/div[has-class("author-details")]/div/a/@href
+body:$body
+
+@if( //div[has-class("news-banner__img-container")] ) {
+  cover: //div[has-class("news-banner__img-container")]/img
+  image_url: //div[has-class("news-banner__img-container")]/img/@src
+}
+@remove: //a[.="Tickets on sale here"]/..
+
+@remove: //a[@href="https://crickettraveloffice.com.au/Ashes2019/index.asp"]
+@remove: //a[starts-with(@href, "https://itunes.apple.com/au/podcast/the-unplayable-podcast")]
+@remove: //*[has-class("ad-placement")]
+@unsupported: //div[has-class("article-video")]
+
+
+@replace_tag(<related>): //div[has-class("quick-single")]
+
+@datetime(-2, "en-US", "d MMMM yyyy, hh:mm a"): $date
+published_date: $@
+@remove: //p[string-length(normalize-space(text())) = 1]

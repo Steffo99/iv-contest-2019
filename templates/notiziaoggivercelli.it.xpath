@@ -1,0 +1,84 @@
+~version: "2.0"
+
+?path_not: /commenti/? 
+!path_not: /edizione-digitale-abbonamenti/?
+$containerpost: //body//div[has-class("main-container")]//div[has-class("style-content-with-sidebar")]//section//div[has-class("container-post")]
+$postimage: $containerpost//div[has-class("post-image")]//img/@src
+$subtitle: $containerpost//h2[has-class("page-subtitle")]
+cover: $postimage
+image_url: $postimage
+
+title: $containerpost//h1[has-class("page-title")]
+subtitle: $subtitle
+@remove: $subtitle
+
+
+
+body: $containerpost
+description: $containerpost//div[has-class("post-content")]/p/text()
+
+$leggianche: //a[starts-with(@class, "u")]
+@after(<related>): $leggianche
+@append(<h1>): $leggianche/../related
+@append("Leggi anche:"): $leggianche/../related/h1
+@append(<a>, "href", ./..//a/@href): $leggianche/../related
+@remove: $leggianche
+
+$related: $containerpost//div[has-class("yarpp-related")]
+@replace_tag(<related>): $related
+@replace_tag(<slideshow>): //div[has-class("wc-gallery")]
+#related should not have images in them
+@remove: $containerpost//related//a//img
+
+@remove: $containerpost//header
+@remove: $containerpost//div[has-class("post-tags")]
+@remove: $containerpost//div[has-class("comments-box")]
+
+@remove: //a[@href="https://notiziaoggivercelli.it/?attachment_id=30946"]/..
+
+@combine: $containerpost//a[@href = "https://notiziaoggivercelli.it"]/../next-sibling::p
+@combine: $containerpost//a[@href = "https://notiziaoggivercelli.it"]/../next-sibling::p
+@combine: $containerpost//a[@href = "https://notiziaoggivercelli.it"]/../next-sibling::p
+@remove: $containerpost//a[@href = "https://notiziaoggivercelli.it"]/..
+@detach: $containerpost//p/a[@href = "https://notiziaoggivercelli.it"]
+
+@unsupported: $containerpost//div[@role="application"]
+@unsupported: $containerpost//script[starts-with(@src, "https://cdn.jwplayer")]/..
+@unsupported: $containerpost//script[starts-with(@src, "https://content.jwplatform")]/..
+@remove: $containerpost//iframe[has-class("wp-embedded-content")]
+
+@after(<img>, src, ./img/@src): $containerpost//a/img/..
+@remove: $containerpost//a/img/..
+@map($containerpost//a) {
+  $p: $@
+  @if($p//related) {
+    <div>: $p
+  }
+}
+
+@map($containerpost//p) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+}
+
+@map($containerpost//h2) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+}
+
+@remove: $containerpost//p[string-length(normalize-space(text())) = 1]
+
+?not_exists: $containerpost
+@replace("^Notizie", ""): //h1
+title: //h1[has-class("page-title")]
+description: ""

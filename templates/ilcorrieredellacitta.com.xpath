@@ -1,0 +1,91 @@
+~version: "2.0"
+
+$article: //article
+
+title: $article//header/h1
+subtitle: $article//p[has-class("td-post-sub-title")]
+body: $article//div[has-class("td-post-content")]
+author: $article//div[has-class("td-author-by")]/next-sibling::a
+
+@if(//div[has-class("ngg-galleryoverview")]) {
+#create the slideshow
+  @append(<slideshow>): $article//div[has-class("td-post-content")]
+  $slideshow: $@
+  #append images to the slideshow
+  @map( //div[has-class("ngg-gallery-thumbnail")]) {
+  $p: $@
+  @append(<img>, src, $p/a/@href):$slideshow
+  }
+}
+@remove: //div[has-class("ngg-galleryoverview")]
+@remove: $article//p[string-length(normalize-space(text())) = 1]
+
+@after(<img>, src, ./img/@src): //a/img/..
+@remove: //a/img/..
+
+
+@unsupported: $article//td//img
+@unsupported: $article//td//iframe
+
+@map($article//p) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+}
+
+@detach: //strong//img
+@map($article//strong) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+}
+@detach: //b//img
+@map($article//b) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+}
+@detach: //i//img
+@map($article//i) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+}
+@detach: //u//img
+@map($article//u) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+}
+
+@unsupported: $article//div[has-class("ngg-imagebrowser")]
+
+?not_exists: $article
+@replace("^Il Corriere della Città [|]", ""): //meta/@content
+@replace(" [|] Il Corriere della Città$", ""): //meta/@content
+
+
+
+?exists: //span[has-class("td-search-query")]
+title: ""
+image_url: ""

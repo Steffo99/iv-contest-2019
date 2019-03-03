@@ -1,0 +1,9 @@
+~version: "2.0"
+
+?path: /wiki/.+
+body: //div[@class="wiki-content"]
+title: $body/../h1
+author: ""
+@replace_tag(<div>): //p
+@unsupported: $body//iframe[starts-with(@src, "https://clyp.it")]
+@unsupported: $body//blockquote[has-class("spoiler")]
