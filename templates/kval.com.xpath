@@ -2,8 +2,10 @@
 
 ?not_exists: //div[has-class("sd-gallery-slides-wrapper")]
 
-@prepend(<trash>): /html
-$trash: //trash
+@prepend(<captionholder>): /html
+@prepend(<tweetholder>): /html
+$captionholder: //captionholder
+$tweetholder: //tweetholder
 
 # Main part
 $story: //div[starts-with(@class, "index_story")]
@@ -30,9 +32,15 @@ $richblob: $jwblob/xml/content/component-head_news3-story-v1-01/story/richText
 @replace("{\/a}", "</a>"): $richblob
 @replace("{\/sd-embed}", "</sd-embed>"): $richblob
 @html_to_dom: $richblob
-$images: $@//sd-embed
-@html_to_dom: $images/@data-caption
+$sdembeds: $@//sd-embed
+@html_to_dom: $sdembeds/@data-caption
 $captions: $@
+@append_to($captionholder): $captions
+$captions: $captionholder/dom
+@html_to_dom: $sdembeds[@data-embed-type="twitter"]/@data-embed-file
+$tweets: $@
+@append_to($tweetholder): $tweets
+
 @urldecode: $captions
 $videos: $jwblob/xml/content/component-head_news3-story-v1-01/story/videos
 
@@ -47,8 +55,7 @@ $extrathumbnails: $story//img[starts-with(@class, "index_thumbnail")]
 @append_to($hero): $extrathumbnails
 
 # Add captions to the first slideshow
-@debug: $captions
-$caption: ($captions)[1]
+$caption: $story//div[starts-with(@class, "index_caption")]
 @append(<figcaption>, "__text", .): $caption
 @append(@__text): $caption/figcaption
 @append_to($hero): $caption/figcaption
@@ -59,32 +66,52 @@ $mp4url: $video/mp4Url
 @prepend(<video>, "src", ./text()): $mp4url
 @prepend_to($hero): $mp4url/video
 
+# Convert twitter widgets
+$tweetdivs: //div[starts-with(@class, "index_twitterEmbed")]
+@replace("([0-9]+)", "https://twitter.com/twitter/statuses/$1"): $tweets/text()
+
+@map ( $tweetdivs ) {
+  $tweetdiv: $@
+  $tweets: $tweetholder/dom
+  $tweet: ($tweets)[1]
+  @append(<iframe>, "src", .): $tweet
+  @append_to($tweetdiv): $tweet/iframe
+  @remove: $tweet
+}
+
 # Inline videos
 $storyembeds: $story//div[starts-with(@class, "index_storyEmbed")]
 @map( $storyembeds ) {
   $div: $@
   $items: $videos/item
+  $captions: $captionholder/dom
   $video: ($items)[1]
+  $cap: ($captions)[1]
   $mp4url: $video/mp4Url
   @prepend(<video>, "src", .): $mp4url
   $videoelement: $mp4url/video
   @wrap(<figure>): $videoelement
   $figureelement: $videoelement/..
-  #@after(<figcaption>, "text", ./../../../alt): $videoelement
-  #@append(@text): $figureelement/figcaption
+  # Create figcaption
+  @append(<figcaption>, "text", .): $cap
+  $figcaption__: $cap/figcaption
+  @append(@text): $figcaption__
+  @append_to($figureelement): $figcaption__
   @prepend_to($div): $figureelement
+  @remove: $cap
   @remove: $video
 }
 
-# Add captions
-
-
-
 # Unsupport Scribd
-@unsupported: $story//iframe[has-class("scribd_iframe_embed")]
+# @unsupported: $story//iframe[has-class("scribd_iframe_embed")]
 
 # Unsupport polls
 @unsupported: $story//div[has-class("mv-widget")]
+
+# Unsupport vemba
+$vemba: $sdembeds[contains(@data-embed-file, "vemba.io")]
+@append_to($body): $vemba
+@unsupported: $vemba
 
 # Remove newsletter signup
 @remove: //div[@id="mc_embed_signup"]
@@ -102,7 +129,6 @@ $photos: //div[starts-with(@id, "photo-")]/img
 $figures: //figure
 #@append(<figcaption>, "text", ./img/@alt): $figures
 @append(@text): $figures/figcaption
-@debug: $figures
 @append_to($main): $figures
 $firstphoto: ($photos)[1]
 title: $firstphoto/@__title
