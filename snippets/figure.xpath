@@ -1,0 +1,12 @@
+# Parametri
+$image__: 1 nodo con immagine
+$text__: 1 nodo con testo
+# Create figure
+@wrap(<figure>): $image__
+$figure__: $image/..
+@set_attr("id", "__figure0"): $figure__
+# Create figcaption
+@append(<figcaption>, "text", .): $text__
+$figcaption__: $text__/figcaption
+@append_to($figure__): $figcaption__
+

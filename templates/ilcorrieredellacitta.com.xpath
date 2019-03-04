@@ -4,7 +4,8 @@ $article: //article
 
 title: $article//header/h1
 subtitle: $article//p[has-class("td-post-sub-title")]
-body: $article//div[has-class("td-post-content")]
+$body: $article//div[has-class("td-post-content")]
+body: $body
 author: $article//div[has-class("td-author-by")]/next-sibling::a
 
 @if(//div[has-class("ngg-galleryoverview")]) {
@@ -17,6 +18,9 @@ author: $article//div[has-class("td-author-by")]/next-sibling::a
   @append(<img>, src, $p/a/@href):$slideshow
   }
 }
+#other slideshow type
+<slideshow>: //div[has-class("post_td_gallery")]
+
 @remove: //div[has-class("ngg-galleryoverview")]
 @remove: $article//p[string-length(normalize-space(text())) = 1]
 
@@ -80,12 +84,19 @@ author: $article//div[has-class("td-author-by")]/next-sibling::a
 
 @unsupported: $article//div[has-class("ngg-imagebrowser")]
 
+$related_title: //a[starts-with(@class, "td-related-left")]
+@wrap(<related>): $related_title
+$related: $related_title/..
+<h3>: $related_title
+$related_articles: //div[starts-with(@class, "td_module_related_posts")]//a[@rel="bookmark"]
+@append_to($related): $related_articles
+@append_to($body): $related 
+
 ?not_exists: $article
 @replace("^Il Corriere della Città [|]", ""): //meta/@content
 @replace(" [|] Il Corriere della Città$", ""): //meta/@content
 
-
-
 ?exists: //span[has-class("td-search-query")]
 title: ""
 image_url: ""
+
