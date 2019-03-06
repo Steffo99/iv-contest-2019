@@ -1,0 +1,15 @@
+# Set the appropriate attributes
+# Enable/Disable as needed
+# title: $title
+# subtitle: $subtitle
+# kicker: $kicker
+# author: $author
+# author_url: $author_url
+# published_date: $published_date
+# description: $description
+# image_url: $image_url
+# document_url: $document_url
+# site_name: "sitename"
+# channel: "@channelname"
+# cover: $cover
+# body: $body

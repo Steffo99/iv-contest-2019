@@ -1,0 +1,4 @@
+# Remove all empty paragraphs
+# test me pls
+@remove: //p[string-length(normalize-space(text())) = 1]
+@remove: //p[string-length(text() = 0] 

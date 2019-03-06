@@ -9,4 +9,3 @@ $figure__: $image/..
 @append(<figcaption>, "text", .): $text__
 $figcaption__: $text__/figcaption
 @append_to($figure__): $figcaption__
-

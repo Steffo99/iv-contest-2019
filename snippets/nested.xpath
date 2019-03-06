@@ -1,0 +1,10 @@
+# Convert to <div> all <p>s with unsupported elements somewhere inside
+@map(//div//p) {
+  $p: $@
+  @if($p//img) {
+    <div>: $p
+  }
+  @if($p//iframe) {
+    <div>: $p
+  }
+}
