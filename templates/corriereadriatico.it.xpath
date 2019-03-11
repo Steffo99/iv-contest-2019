@@ -1,0 +1,181 @@
+~version: "2.0"
+
+# Create the trash
+$html: /html
+@append(<trash>): $html
+$trash: $html/trash
+@append(<emptybody>): $html
+$emptybody: $html/emptybody
+@append(<parentbody>): $html
+$parentbody: $html/parentbody
+
+?domain: corriereadriatico\.it
+?domain: www\.corriereadriatico\.it
+
+# Find the basic properties
+$title: //h1
+$body: //div[has-class("articolo_corpo")]/div
+$cover: //div[has-class("foto-articolo")]/img
+$title: //h1
+@if_not($title) {
+  $title: //title
+}
+$date: //p[has-class("data")]
+$author: $body//div[has-class("firma")]
+
+# Find datetime
+@match("^([^-]+)", 1): $date/text()
+@replace("\\s{2,}", ""): $date/text()
+@datetime(1, "it-IT", "EEEE d MMMM yyyy, HH:mm"): $date/text()
+$published_date: $@
+
+# Create related tags
+$related_blocks: //div[has-class("articoli_correlati")]
+@append(<related>): $related_blocks
+$related: $related_blocks/related
+@append(<h1>): $related
+@map($related_blocks) {
+  $related_block: $@
+  $related_map: $related_block/related
+  @append_to($related_map): $related_block//a
+  $is_approfondimenti: $related_block//img[@src="/img/tst_cx_approfondimenti.png"]
+  @if($is_approfondimenti) {
+    @append("Approfondimenti"): $related_block/related/h1
+    @append_to($body): $related_map
+  }
+  $is_altri_articoli: $related_block//img[@src="/img/tst_cx_altriarticoli.png"]
+  @if($is_altri_articoli) {
+    @append("Altri articoli"): $related_block/related/h1
+    @append_to($body): $related_map
+  }
+}
+
+?domain: sport\.corriereadriatico\.it
+
+# Alternate basic properties
+$title: //h1[@itemprop="headline"]
+$cover: //header/figure
+$raw_structured_data: (//script[@data-type="application/ld+json" and @type="text/plain"])[last()]
+@match("[0-9]{4}-[0-9]{2}-[0-9]{2}"): $raw_structured_data
+@datetime(0, "it-IT", "yyyy-MM-dd"): $raw_structured_data
+$published_date: $@
+
+# Create related tags
+$related_block: //div[has-class("related-container")]
+@append(<related>): $related_block
+$related: $related_block/related
+@append(<h3>): $related 
+@append("Altri articoli"): $related/h3
+$related_urls: $related_block//figure/a
+@map($related_urls) {
+  $related_url: $@
+  $is_photogallery: $related_url/../..//h3[text()[contains(.,"photogallery")]]
+  $is_video: $related_url/../..//h3[text()[contains(.,"video")]]
+  @remove: $related_url/*
+  @if($is_photogallery) {
+    @append("Vai alla photogallery"): $related_url
+    @wrap(<p>): $related_url
+    @append_to($emptybody): $related_url/..
+  }
+  @if($is_video) {
+    @append("Vai al video"): $related_url
+    @wrap(<p>): $related_url
+    @append_to($emptybody): $related_url/..
+  }
+  @if_not($is_video) {
+    @if_not($is_photogallery) {
+      @append_to($related): $related_url
+    }
+  }
+}
+@append_to($emptybody): $related
+
+# Find the true body
+$realbody: (//div[has-class("corpo-content")])[1]
+
+# Create iframe
+@before(<iframe>, \
+  src, ".//a[starts-with(@href, \"https://twitter.com/\")][contains(@href, \"/status/\") or contains(@href, \"/statuses/\")]/@href", \
+  class, "twitter-tweet" \
+): $realbody//blockquote[has-class("twitter-tweet")]
+@remove
+
+# Finally add the true body to the body
+@append_to($parentbody): $emptybody
+@append_to($parentbody): $realbody
+@set_attr("myid", "emptybody"): $emptybody
+@set_attr("myid", "realbody"): $realbody
+@set_attr("myid", "parentbody"): $parentbody
+<div>: $emptybody
+<div>: $realbody
+<article>: $parentbody
+$body: //*[@myid="parentbody"]
+
+?true
+
+# Remove <br>
+#<p>: //br
+
+# Remove empty paragraph
+# Might break stuff! Be careful!
+@replace("^\\s+$", ""): //text()
+
+# Separate copyright from the rest of the article
+$copyright: $body/div[@style="margin-top:8px; font-size:10px;"]
+@wrap(<p>): $copyright
+
+# Move the signature to the right place
+@append_to($trash): $author
+@replace("di ", ""): $author
+
+# Fix buggy pictures
+$linkpictures: $body//a/img/..
+@append(<figure>, "src", ./img/@src, "href", ./@href): $linkpictures
+@append(<img>, "src", ./@src, "href", ./@href): $linkpictures/figure
+<div>: $linkpictures
+$linkpictures: $body//div/img/..
+@remove: $linkpictures/img
+
+# Add gallery link
+$play_foto: //div[has-class("bg-fotogallery")]
+$play_foto_a: $play_foto/../..
+@remove: $play_foto_a/div
+@append("Vai alla fotogallery"): $play_foto_a
+@wrap(<p>): $play_foto_a
+@prepend_to($body): $play_foto_a/..
+
+# Unsupport lazy photo galleries
+@unsupported: $body//div[has-class("embed_photogallery")]
+
+# Unsupport paywalls
+@unsupported: $body//div[has-class("paywall")]
+
+# Create heuristic preview
+@if_not($body) {
+  @replace(" [|] Corriere Adriatico", ""): $title
+  description: ""
+  image_url: ""
+}
+
+?domain: video\.corriereadriatico\.it
+
+$title: //h1
+$body: //div[@id="player"]
+
+?true
+
+# Set the appropriate attributes
+# Enable/Disable as needed
+title: $title
+# subtitle: $subtitle
+# kicker: $kicker
+author: $author
+# author_url: $author_url
+published_date: $published_date
+# description: $description
+# image_url: $image_url
+# document_url: $document_url
+site_name: "Corriere Adriatico"
+# channel: "@channelname"
+cover: $cover
+body: $body
