@@ -1,0 +1,9 @@
+#support youtube old embed
+$ytvideo: //object/embed[starts-with(@src,"https://www.youtube.com")]
+?exists: $ytvideo
+@replace("com/v/", "com/watch?v="): $ytvideo/@src
+@before(<iframe>, src, $ytvideo/@src): $ytvideo/..
+<div>: $@/..
+@remove: $ytvideo/..
+
+#da controllare se la struttura //object/embed é uguale
