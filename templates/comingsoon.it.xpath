@@ -1,25 +1,76 @@
 ~version: "2.0"
 
-# Find the body
+# Find the body, title and subtitle
 $body: //article
-
-# Distinguish articles from movie pages
-$nav: $body/nav
-
-?not_exists: $nav  
-# Articles
-
-# Find basic properties
 $title: $body//h1[has-class("titolo")]
 $subtitle: $body//p[has-class("box-dati")]
+$related_container_art: //div[has-class("contenitore-articoli")]
+
+# Distinguish articles from movie pages
+$nav: $body//nav
+
+?exists: $nav
+### Movie pages
+
+# Remove nav, as all elements in it are included in the page
+# TO CHECK: FOTO, RECENSIONE, STREAMING
+@remove: $nav
+
+# Remove divider
+@remove: $body//hr
+
+# Combine multicolumn lists
+@combine: $body//ul[has-class("destra")]
+
+# Remove View All button
+@remove: $body//a[has-class("tasto-apri-box")]
+
+# Handle actors
+$actors_list: $body//div[has-class("lista-film")]
+@combine: $actors_list/div[has-class("row")]
+@append(<slideshow>): $actors_list
+$actors_slideshow: $actors_list/slideshow
+@after(<figure>, "bio", "./@href", "img", "./img/@src", "name", "./div[1]", "dub", "./div[2]"): $actors_list/div/a
+@append_to($actors_slideshow): $actors_list/div/figure
+@append(<img>, "src", "./@img", "href", "./@bio"): $actors_list/slideshow/figure
+@append(<figcaption>, "name", "./@name", "dub", "./@dub"): $actors_list/slideshow/figure
+@append(@name): $actors_list/slideshow/figure/figcaption
+@append(" - "): $actors_list/slideshow/figure/figcaption
+@append(@dub): $actors_list/slideshow/figure/figcaption
+@remove: $actors_list/div
+
+# Handle videos and trailers
+$trailer_s: $body//section
+@prepend_to($trailer_s): $trailer_s//div[has-class("h5") and has-class("descrizione")]
+#@prepend_to($trailer_s): $trailer_s//div[has-class("h4") and has-class("titolo")]
+$other_videos: $trailer_s//a[has-class("videogallery")]
+@map($other_videos) {
+  $video: $@
+  @replace("^/", "https://www.comingsoon.it/film/"): $video/@href
+  @append(<iframe>, "src", "./@href"): $video
+  #@append_to($trailer_s): $video//div[has-class("titolo")]
+  @append_to($trailer_s): $video//div[has-class("descrizione")]
+  @append_to($trailer_s): $video/iframe
+  @remove: $video
+}
+
+# Videos cleanup
+@remove: $trailer_s//div[has-class("box-tags")]
+@remove: $trailer_s//div[has-class("box-links")]
+
+?not_exists: $nav
+### Articles
+
+# Find basic properties
 $author_node: //span[@itemprop="author"]
 $author: $author_node//span[@itemprop="name"]/text()
 $author_url: $author_node/a/@href
 $date_node: //time[@itemprop="datePublished"]
 $published_date: $date_node/@datetime
 $cover: //figure[@itemprop="image"]
-$related_container_art: //div[has-class("contenitore-articoli")]
 $related_container_mov: //div[has-class("box-film-di-riferimento")]
+
+?true
 
 # Create related articles
 @append(<related>, "myid", "articles"): $body
@@ -28,12 +79,14 @@ $related_articles: $body/related[@myid="articles"]
 @append_to($related_articles): $related_container_art//a
 
 # Create related movies
-@append(<related>, "myid", "movies"): $body
-$related_movies: $body/related[@myid="movies"]
-@remove: $related_container_mov//a/*
-@append_to($related_movies): $related_container_mov//a
-@prepend(<h3>): $related_movies
-@append("Schede di riferimento"): $related_movies/h3
+@if_not($nav) {
+  @append(<related>, "myid", "movies"): $body
+  $related_movies: $body/related[@myid="movies"]
+  @remove: $related_container_mov//a/*
+  @append_to($related_movies): $related_container_mov//a
+  @prepend(<h3>): $related_movies
+  @append("Schede di riferimento"): $related_movies/h3
+}
 
 # Cleanup useless elements
 @remove: $body//div[has-class("box-dati")]
@@ -44,14 +97,21 @@ $related_movies: $body/related[@myid="movies"]
 @remove: $body//a[has-class("box-titoli-commenti-facebook")]
 @remove: $body//div[has-class("box-source-link")]
 
+# Convert titles to the appropriate format
+<h1>: //div[has-class("h1")]
+<h2>: //div[has-class("h2")]
+<h3>: //div[has-class("h3")]
+<h4>: //div[has-class("h4")]
+<h5>: //div[has-class("h5")]
+<h6>: //div[has-class("h6")]
+
 # Test jwplayer support
 $jwplayers: $body//iframe[contains(@src, "?idv=")]
-@replace(".+/?idv=([0-9]+)", "https://video.comingsoon.it/MP4/$1.mp4"): $jwplayers/@src
+$jwplayers+: $body//iframe[contains(@src, "?vid=")]
+@replace(".+/?(?:idv|vid)=([0-9]+)", "https://video.comingsoon.it/MP4/$1.mp4"): $jwplayers/@src
 @after(<video>, "src", "./@src"): $jwplayers
 @remove: $jwplayers
 <div>: //video/ancestor::p
-
-?true
 
 # TEST NESTED FIX
 $problems: $body
