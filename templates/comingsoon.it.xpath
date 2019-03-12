@@ -99,9 +99,11 @@ $streaming: $article//h3[has-class("vod_type_title")]
 @remove: $article//div[has-class("contenuto-scheda")]
 
 $body: $article
+
 ?path: .+/news/.+
 ?path: .+/recensione/
-### Articles, Reviews, Authors
+?path: /chi-siamo/
+### Articles, Reviews
 
 # Find basic properties
 $author_node: //span[@itemprop="author"]
@@ -123,6 +125,7 @@ $related_container_art: //div[has-class("col-xs-12")]/div[has-class("js-masonry"
 $body: $article
 
 ?path: .+/foto/
+?path: .+/foto/.+
 ### Photo pages
 
 # Create realboy tag
@@ -166,6 +169,7 @@ $seasons: $article/related[@myid="seasons"]
 
 ?path: .+/news/.+
 ?path: .+/recensione/
+?path: /chi-siamo/
 ### Back to Articles and Reviews
 
 @append(<related>, "myid", "movies"): $article
@@ -174,6 +178,15 @@ $related_movies: $article/related[@myid="movies"]
 @append_to($related_movies): $related_container_mov//a
 @prepend(<h3>): $related_movies
 @append("Schede di riferimento"): $related_movies/h3
+
+?path: /chi-siamo/
+### Chi siamo hardcode
+@after(<slideshow>): //div[has-class("logo-canali")]
+$slideshow: //slideshow
+@wrap(<figure>): //div[has-class("logo-canali")]//img
+@append_to($slideshow): //div[has-class("logo-canali")]//figure
+@debug: $slideshow
+
 
 ?true
 ### Back to Everything
@@ -185,7 +198,6 @@ $trailer_s?: //section[has-class("video-player-xl-contenitore-scheda")]
 @prepend_to($trailer_s): $trailer_s//div[has-class("h5") and has-class("descrizione")]
 @prepend_to($trailer_s): $trailer_s//div[has-class("h4") and has-class("titolo")]
 $other_videos: $trailer_s//a[has-class("videogallery")]
-@debug: $other_videos
 # Display other videos as related
 ?path: .+/video/.+
 @after(<related>, "myid", "othervideos"): $other_videos
