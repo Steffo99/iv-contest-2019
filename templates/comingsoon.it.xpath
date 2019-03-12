@@ -8,25 +8,26 @@ $related_container_art: //div[has-class("contenitore-articoli")]
 
 # Distinguish articles from movie pages
 $nav: $article//nav
+$nav+: //div[has-class("down-tab-menu")]/nav
 
 ?path: .+/scheda.*
 ?path: .+/video.*
 ?path: .+/episodi/.+
+?path: .+/biografia/
+?path: .+/filmografia/
+?path: .+/streaming/
 
 ### Movie pages
-
-# Remove nav, as all elements in it are included in the page
-# TO CHECK: STREAMING
-@remove: $nav
-
-# Remove divider
-@remove: $article//hr
 
 # Combine multicolumn lists
 @combine: $article//ul[has-class("destra")]
 
 # Remove View All button
 @remove: $article//a[has-class("tasto-apri-box")]
+
+# Remove random headings
+@wrap(<p>): $article//div[has-class("dati-biografia")]
+@replace("h5", ""): $article//div[has-class("dati-biografia")]/@class
 
 # Handle actors
 $actors_list: $article//div[has-class("lista-film")]
@@ -42,37 +43,15 @@ $actors_slideshow: $actors_list/slideshow
 @append(@dub): $actors_list/slideshow/figure/figcaption
 @remove: $actors_list/div
 
-# Handle videos and trailers, also images
-$trailer_s: $article//section
-@prepend_to($trailer_s): $trailer_s//div[has-class("h5") and has-class("descrizione")]
-@remove: $trailer_s//div[has-class("h4") and has-class("titolo")]
-$other_videos: $trailer_s//a[has-class("videogallery")]
-@after(<related>, "myid", "othervideos"): $other_videos
-$other_videos_rel: $trailer_s//related[@myid="othervideos"]
-@append(<h1>): $other_videos_rel
-@append("Vedi gli altri video"): $other_videos_rel/h1
-@remove: $other_videos/*
-@append_to($other_videos_rel): $other_videos
-
-$gallerybox: $trailer_s//div[has-class("box-galleria-immagini-video")]
-@if($gallerybox) {
-  @after(<related>, "myid", "gallery"): $gallerybox
-  $gallery_rel: $trailer_s//related[@myid="gallery"]
-  @append(<h3>): $gallery_rel
-  @append("Vedi le foto"): $gallery_rel/h3
-  @remove: $gallerybox/a/*
-  @append_to($gallery_rel): ($gallerybox/a)[1]
-  @replace("#[0-9]", ""): $gallery_rel
-}
-
 # Handle star rating
 $csrating: $article//div[has-class("voto-comingsoon")]
 @append(<div>, "data-rating", ./@data-rating): $csrating
 @append(@data-rating): $csrating/div[@data-rating]
 @replace("h6", ""): $csrating/@class
 @wrap(<p>): $csrating
+@append(" / 5 stelle"): $csrating/div[@data-rating]
 @remove: $article//div[@id="voto-pubblico"]
-@remove: $article//div[@itemprop="aggregateRating"]
+@remove: $article//div[has-class("valutazione")]
 
 # Handle table of contents
 $indice: $article//ul[@class="indice"]
@@ -90,22 +69,39 @@ $anchors: $article//h2[has-class("anchor")]/span
 # Handle episodes
 <details>: $article//div[has-class("panel")]
 $details: $article//details[has-class("panel")]
-@append(<h3>, "localized", "./a/div[1]", "title", "./a/div[2]"): $details
-@append(@localized): $details/h3
-@append(" - "): $details/h3
-@append(@title): $details/h3
-@debug: $details/h3
+@append(<summary>, "localized", "./a/div[1]", "title", "./a/div[2]"): $details
+@append(@localized): $details/summary
+@append(" - "): $details/summary
+@append(@title): $details/summary
+@remove: $details/a/div
 
-# Videos cleanup
-@remove: $trailer_s//div[has-class("box-tags")]
-@remove: $trailer_s//div[has-class("box-links")]
+# Handle seasons
+$seasons_container: //section/div[has-class("box-stagioni-della-serie")]
+@append(<related>, "myid", "seasons"): $article
+$seasons: $article/related[@myid="seasons"]
+@append_to($seasons): $seasons_container/header/h2
+@append_to($seasons): $seasons_container/div/a
+
+# Handle streaming
+$streaming: $article//div[has-class("vod_type_title")]
+<h3>: $streaming
+$streaming: $article//h3[has-class("vod_type_title")]
+@append(" "): $article//div[has-class("vod_price")]/span
+
+# Remove divider
+@if_not($streaming) {
+  @remove: $article//hr
+}
+
+# Cleanup
 @remove: $article//div[@id="voto-pubblico"]
 @remove: $article//span[has-class("a-button-shop")]
+@remove: $article//div[has-class("contenuto-scheda")]
 
 $body: $article
-
 ?path: .+/news/.+
-### Articles
+?path: .+/recensione/
+### Articles, Reviews, Authors
 
 # Find basic properties
 $author_node: //span[@itemprop="author"]
@@ -115,6 +111,35 @@ $date_node: //time[@itemprop="datePublished"]
 $published_date: $date_node/@datetime
 $cover: //figure[@itemprop="image"]
 $related_container_mov: //div[has-class("box-film-di-riferimento")]
+
+$body: $article
+
+?path: .+/news/
+### Related news pages
+
+$article: //article
+$related_container_art: //div[has-class("col-xs-12")]/div[has-class("js-masonry")]
+
+$body: $article
+
+?path: .+/foto/
+### Photo pages
+
+# Create realboy tag
+@prepend(<realbody>): /html
+$article: /html/realbody
+
+# Create slideshow
+$photo_containers: //div[@itemtype="http://schema.org/ImageObject"]/div[has-class("contenitore-foto")]
+<figure>: $photo_containers
+$photo_containers: //div[@itemtype="http://schema.org/ImageObject"]/figure[has-class("contenitore-foto")]
+@append(<figcaption>, "text", "./img/@alt"): $photo_containers
+@append(@text): $photo_containers/figcaption
+@append(<slideshow>, "myid", "slideshow"): $article
+$photo_slideshow: $article/slideshow[@myid="slideshow"]
+@append_to($photo_slideshow): $photo_containers
+@append_to($article): $nav
+@append_to($article): $photo_slideshow
 
 $body: $article
 
@@ -129,8 +154,19 @@ $related_articles: $article/related[@myid="articles"]
 @remove: $related_container_art//a/*
 @append_to($related_articles): $related_container_art//a
 
+?path: .+/news/
+### Related news pages
+
+# Handle seasons
+$seasons_container: //section/div[has-class("box-stagioni-della-serie")]
+@append(<related>, "myid", "seasons"): $article
+$seasons: $article/related[@myid="seasons"]
+@append_to($seasons): $seasons_container/header/h2
+@append_to($seasons): $seasons_container/div/a
+
 ?path: .+/news/.+
-### Back to Articles
+?path: .+/recensione/
+### Back to Articles and Reviews
 
 @append(<related>, "myid", "movies"): $article
 $related_movies: $article/related[@myid="movies"]
@@ -142,7 +178,49 @@ $related_movies: $article/related[@myid="movies"]
 ?true
 ### Back to Everything
 
+# Handle videos and trailers, also images
+#$trailer_s: //section/div[has-class("video-player-xl-articolo")]
+$trailer_s: //section[has-class("contenuto-scheda-mob0")]
+$trailer_s?: //section[has-class("video-player-xl-contenitore-scheda")]
+@prepend_to($trailer_s): $trailer_s//div[has-class("h5") and has-class("descrizione")]
+@prepend_to($trailer_s): $trailer_s//div[has-class("h4") and has-class("titolo")]
+$other_videos: $trailer_s//a[has-class("videogallery")]
+@debug: $other_videos
+# Display other videos as related
+?path: .+/video/.+
+@after(<related>, "myid", "othervideos"): $other_videos
+$other_videos_rel: $trailer_s//related[@myid="othervideos"]
+@append(<h1>): $other_videos_rel
+@append("Vedi gli altri video"): $other_videos_rel/h1
+@remove: $other_videos/*
+@append_to($other_videos_rel): $other_videos
+?path_not: .+/video/.+
+@remove: $other_videos
+?true
+
+$gallerybox: $trailer_s/div[has-class("box-galleria-immagini-video")]
+@if($gallerybox) {
+  @after(<div>, "myid", "gallery"): $gallerybox
+  $gallerylink: $trailer_s//div[@myid="gallery"]
+  @remove: $gallerybox/a/*
+  @append_to($gallerylink): ($gallerybox/a)[1]
+  @append("VEDI TUTTE LE FOTO"): $gallerylink/a
+  @wrap(<p>): $gallerylink
+}
+@remove: $trailer_s//div[has-class("box-tags")]
+$jwplayers: $article//iframe[contains(@src, "?idv=")]
+@replace(".+/?idv=([0-9]+)(?:&ply=1)?", "https://video.comingsoon.it/MP4/$1.mp4"): $jwplayers/@src
+@after(<video>, "src", "./@src"): $jwplayers
+@remove: $jwplayers
+<div>: //video/ancestor::p
+
+# Handle nav
+@remove: $nav/ul/li[has-class("active")]
+@remove: $nav/ul/li[has-class("disabled")]
+@remove: $nav/ul/li[a[@id="fb-comment-link-goto-button"]]
+
 # Cleanup useless elements
+@remove: $article//div[has-class("box-tags")]
 @remove: $article//div[has-class("box-dati")]
 @remove: $article//div[has-class("tasti-social-top")]
 @remove: $article//div[has-class("author")]
@@ -150,10 +228,16 @@ $related_movies: $article/related[@myid="movies"]
 @remove: $article//div[has-class("box-tags-articolo")]
 @remove: $article//a[has-class("box-titoli-commenti-facebook")]
 @remove: $article//div[has-class("box-source-link")]
+@remove: $article//select
+@remove: $article//a[has-class("disabled")]
+@remove: $article//li[not(normalize-space())]
+
+# Mark marked elements
+@wrap_inner(<b>): //li[has-class("evidenziato-in-box")]
 
 # Fullsize images
 $images: //img
-@replace("_ico", ""): $images/@src
+@replace("_ico", ""): $images[not(contains(@src, "def_ico")) and not(contains(@src, "_icov"))]/@src
 @replace("/ico", ""): $images/@src
 
 # Convert titles to the appropriate format
@@ -163,13 +247,6 @@ $images: //img
 <h4>: //div[has-class("h4")]
 <h5>: //div[has-class("h5")]
 <h6>: //div[has-class("h6")]
-
-# Test jwplayer support
-$jwplayers: $article//iframe[contains(@src, "?idv=")]
-@replace(".+/?idv=([0-9]+)(?:&ply=1)?", "https://video.comingsoon.it/MP4/$1.mp4"): $jwplayers/@src
-@after(<video>, "src", "./@src"): $jwplayers
-@remove: $jwplayers
-<div>: //video/ancestor::p
 
 # TEST NESTED FIX
 $problems: $article
@@ -203,3 +280,8 @@ site_name: "ComingSoon.it"
 # channel: "@channelname"
 cover: $cover
 body: $body
+
+@if_not( $body ) {
+  image_url: ""
+  document_url: ""
+}
