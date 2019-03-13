@@ -1,0 +1,4 @@
+#fix instagram embed nestedElement errror
+$instagram: //blockquote[has-class("instagram-media")]
+@before(<iframe>, "src", ./div/p/a[1]/@href): $instagram
+@remove: $instagram
