@@ -1,0 +1,5 @@
+#fix twitter
+#found on more than one site, when twitter widget is in a blocklquote, telegram fucks it up ad it needs to be created manually
+$twitter: //blockquote[has-class("twitter-tweet")]
+@after(<iframe>, "src", (//blockquote[has-class("twitter-tweet")]//a)[last()]/@href): $twitter
+@remove: $twitter
