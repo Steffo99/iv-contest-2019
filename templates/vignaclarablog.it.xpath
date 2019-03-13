@@ -1,0 +1,65 @@
+~version: "2.0"
+
+$article: //article
+
+@if($article) {
+  $header: $article//div[has-class("td-post-header")]/header
+  
+  # Select the title
+  $title: $header/h1[has-class("entry-title")]
+  
+  # Find author name and publishing date
+  $author: $article//div[has-class("td-post-author-name")]/a
+  $author_url: $author/@href
+  $published_date: $header//time/@datetime
+  
+  # Find and fullsize the cover
+  $cover_img: $article//div[has-class("td-post-featured-image")]/img
+  @match("(.+) 640w", 1): $cover_img/@srcset
+  @set_attr("src", @srcset): $cover_img
+  
+  # Remove article headers
+  @remove: $article//div[has-class("entry-crumbs")]
+  @remove: $article//ul[has-class("td-category")]
+  @remove: $header//div[has-class("meta-info")]
+
+  # Remove social footers
+  @remove: $article//footer
+  @remove: $article//a[@href="https://www.facebook.com/VignaClaraBlog.it"]/ancestor::div[has-class("td-a-rec")]
+  
+  
+  # Universal nested fix
+  $problems: $article
+  @while( $problems ) {
+    $test: $article//*[self::blockquote or self::aside or self::figure or (self::img and not(./ancestor::figure)) or self::iframe or self::slideshow or self::related or self::footer or self::table[not(ancestor::table) and not(descendant::table)]]
+   
+    $problems: $test/self::*[ancestor::anchor or ancestor::blockquote or ancestor::aside or ancestor::footer or ancestor::strong or ancestor::b or ancestor::em or ancestor::i or ancestor::ins or ancestor::u or ancestor::del or ancestor::s or ancestor::strike or ancestor::code or ancestor::kbd or ancestor::samp or ancestor::tt or ancestor::mark or ancestor::sup or ancestor::pic or ancestor::sub or ancestor::a or ancestor::reference or ancestor::h1 or ancestor::h2 or ancestor::h3 or ancestor::h4 or ancestor::h5 or ancestor::h6 or ancestor::p or ancestor::pre or ancestor::hr or ancestor::img or ancestor::br]
+   
+    @if( $problems ) {
+      $parent: $problems/parent::*
+      @detach: $parent/node()
+      @set_attr("merge", $index): $@
+      <remove>: $parent
+      @after_el("./parent::*"): $problems
+      @combine: $article//self::*[prev-sibling::*/@merge = @merge]
+    }
+  }
+  
+  $body: $article
+}
+
+# Set the appropriate attributes
+# Enable/Disable as needed
+title: $title
+# subtitle: $subtitle
+# kicker: $kicker
+author: $author
+author_url: $author_url
+published_date: $published_date
+# description: $description
+# image_url: $image_url
+# document_url: $document_url
+# site_name: "sitename"
+# channel: "@channelname"
+# cover: $cover
+body: $body
