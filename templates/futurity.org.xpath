@@ -1,0 +1,87 @@
+~version: "2.0"
+
+$article: //div[has-class("article")]
+
+@if($article) {
+  $title: $article//h1[has-class("heading-primary")]
+  $body: $article//div[has-class("article-content")]
+  $author: $article//a[@rel="author"]
+  $author_url: $article//a[@rel="author"]/@href
+    
+  # Create cover
+  <figure>: $article//div[has-class("article-hero")]/picture
+  $cover: $article//div[has-class("article-hero")]/figure
+  <figcaption>: $article//div[has-class("hero-img-caption")]/p
+  @append_to($cover): $cover/source//img
+  @remove: $cover/source
+  @set_attr("src", @srcset): $cover/img
+  #@clone: $article//figcaption
+  #<cite>: ($article//figcaption)[2]
+  #@match("([^(]+)?(\\([^)]+\\))?", 1): $article//figcaption
+  #@append_to($cover): $$
+  #@match("([^(]+)?(\\([^)]+\\))?", 2): $article//cite
+  @append_to($cover): $article//figcaption
+  
+  # Add video to body if it exists
+  @prepend_to($body): $article//div[@id="modalVideo"]//iframe
+  
+  # Create related
+  <related>: $article//div[has-class("related-articles")]
+  @append(<h3>): $article//related[has-class("related-articles")]
+  @append("Related"): $$/h3
+  
+  # Create aside
+  <aside>: ($body/div/p)[1]
+  <aside>: $body//blockquote
+  
+  # Fix QAs
+  $qa: $article//div[has-class("qa-block")]
+  $mobjects: $qa//div[has-class("media-object")]
+  @append(": "): $mobjects
+  @map($mobjects) {
+    $mobject: $@
+    $mbody: $mobject/../../div[has-class("media-body")]
+    @prepend_to($mbody): $mobject
+    @combine: $mbody/h4
+    <p>: $mbody/div
+    @combine: ($mbody/p)[2]
+  }
+  @wrap(<b>): $qa//p[has-class("question")]
+  
+  # Cleanup unused stuff
+  @remove: $article//div[has-class("sticy-share-block")]
+  @remove: $article//h5
+  
+  # Nested fix
+  $problems: $article
+  @while( $problems ) {
+    $test: $article//*[self::blockquote or self::aside or self::figure or (self::img and not(./ancestor::figure)) or self::iframe or self::slideshow or self::related or self::footer or self::table[not(ancestor::table) and not(descendant::table)]]
+ 
+    $problems: $test/self::*[ancestor::anchor or ancestor::blockquote or ancestor::aside or ancestor::footer or ancestor::strong or ancestor::b or ancestor::em or ancestor::i or ancestor::ins or ancestor::u or ancestor::del or ancestor::s or ancestor::strike or ancestor::code or ancestor::kbd or ancestor::samp or ancestor::tt or ancestor::mark or ancestor::sup or ancestor::pic or ancestor::sub or ancestor::a or ancestor::reference or ancestor::h1 or ancestor::h2 or ancestor::h3 or ancestor::h4 or ancestor::h5 or ancestor::h6 or ancestor::p or ancestor::pre or ancestor::hr or ancestor::img or ancestor::br]
+ 
+    @if( $problems ) {
+      $parent: $problems/parent::*
+      @detach: $parent/node()
+      @set_attr("merge", $index): $@
+      <remove>: $parent
+      @after_el("./parent::*"): $problems
+      @combine: $article//self::*[prev-sibling::*/@merge = @merge]
+    }
+  }
+}
+
+# Set the appropriate attributes
+# Enable/Disable as needed
+title: $title
+# subtitle: $subtitle
+# kicker: $kicker
+author: $author
+author_url: $author_url
+# published_date: $published_date
+# description: $description
+# image_url: $image_url
+# document_url: $document_url
+# site_name: "sitename"
+# channel: "@channelname"
+cover: $cover
+body: $body
