@@ -7,10 +7,6 @@ assignees: ''
 
 ---
 
-**Pagina problematica:** 
+**Instant View problematica:**  [Template n](link)
 
-**Motivo:** 
-
-**Autore template:** 
-
-**Template #:**
+**Descrizione completa:** 
