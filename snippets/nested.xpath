@@ -1,3 +1,5 @@
+# kinda obsolete, don't use this anymore, use this syntax
+# <div>: //p[.//img]
 # Convert to <div> all <p>s with unsupported elements somewhere inside
 @map(//div//p) {
   $p: $@
@@ -8,3 +10,5 @@
     <div>: $p
   }
 }
+
+
