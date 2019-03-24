@@ -1,0 +1,10 @@
+# Parse ld+json data
+
+@json_to_xml: //script[@data-type="application/ld+json"]
+$ldjson: $@
+$ldart: ($ldjson/item[@name="@graph"])[1]
+$title: $ldart/headline
+$subtitle: $ldart/description
+@datetime: $ldart/datePublished
+$published_date: $@
+$author: $ldart/author/name  # Works only for single authors!

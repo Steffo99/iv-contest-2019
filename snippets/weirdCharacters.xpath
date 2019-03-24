@@ -1,0 +1,8 @@
+# Unescape stuff?
+@replace("&agrave;", "à"): $title
+@replace("&egrave;", "è")
+@replace("&igrave;", "ì")
+@replace("&ograve;", "ò")
+@replace("&ugrave;", "ù")
+@replace("&lsquo;", "‘")
+@replace("&rsquo;", "’")
