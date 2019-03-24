@@ -1,0 +1,100 @@
+~version: "2.1"
+site_name: "InvestireOggi"
+# Di Steffo
+# Note: l'API WordPress è buggato (?), però uso correttamente srcset per le immagini
+
+
+# Find the article
+$article: //article
+
+# Parse ld+json data
+@json_to_xml: //script[@data-type="application/ld+json"]
+$ldjson: $@
+$ldart: ($ldjson/item[@name="@graph"])[1]
+$ldart: $$/item[not(@name)]
+
+# Get main article data
+$title: $article//header/h1[has-class("entry-title")]
+$subtitle: $article//header/h2[has-class("entry-summary")]
+@datetime: $article//time/@datetime
+$published_date: $@
+$author: $article//author/a/text()
+
+# Alternative source for main article data: ld+json
+$title?: $ldart/headline
+$subtitle?: $ldart/description
+@datetime: $ldart/datePublished
+$published_date?: $@
+$author?: $ldart/author/name  # Works only for single authors!
+
+# Convert the meta property image to a img to be set as cover
+$meta_cover: //meta[@property="og:image:secure_url"]
+@set_attr("src", @content)
+@set_attr("steffo-id", "cover")
+@wrap(<figure>)
+<img>
+$cover: $$/..
+@remove: //figure[has-class("post-thumbnail")]
+
+# Get and set the author_url
+$author_url: $article//author/a/@href
+
+# Create related articles
+# Unreliable, but improves pages; 
+#$leggi_anche: $article//p[starts-with(text(), "Leggi anche:")]
+#@append(<h3>)
+#@append("Leggi anche:"): $$/h3
+#<related>: $leggi_anche
+#$leggete_anche: $article//p[starts-with(text(), "Leggete anche:")]
+#@append(<h3>)
+#@append("Leggete anche:"): $$/h3
+#<related>: $leggete_anche
+<related>: $article//div[@id="questions-others"]
+<h3>: $$/div[has-class("qb_title")]
+
+# Fix anchors
+@urlencode: //a[has-class("summary_archon")]/@name
+
+# Nested fix
+<div>: //p[.//img]
+
+# Cleanup
+@remove: //div[has-class("ioshare")]  # Share
+# Maybe clean empty paragraphs?
+
+# Create body
+$body: $article//div[has-class("article-content")]
+
+# Unescape final properties
+@replace("&agrave;", "à"): $title
+@replace("&egrave;", "è")
+@replace("&igrave;", "ì")
+@replace("&ograve;", "ò")
+@replace("&ugrave;", "ù")
+@replace("&lsquo;", "‘")
+@replace("&rsquo;", "’")
+
+@replace("&agrave;", "à"): $subtitle
+@replace("&egrave;", "è")
+@replace("&igrave;", "ì")
+@replace("&ograve;", "ò")
+@replace("&ugrave;", "ù")
+@replace("&lsquo;", "‘")
+@replace("&rsquo;", "’")
+
+@replace("&agrave;", "à"): $author
+@replace("&egrave;", "è")
+@replace("&igrave;", "ì")
+@replace("&ograve;", "ò")
+@replace("&ugrave;", "ù")
+@replace("&lsquo;", "‘")
+@replace("&rsquo;", "’")
+
+# Set final properties
+title: $title
+subtitle: $subtitle
+description: $subtitle
+published_date: $published_date
+author: $author
+author_url: $author_url
+cover: $cover

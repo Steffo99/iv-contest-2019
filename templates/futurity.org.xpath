@@ -20,7 +20,7 @@ $article: //div[has-class("article")]
   #@match("([^(]+)?(\\([^)]+\\))?", 1): $article//figcaption
   #@append_to($cover): $$
   #@match("([^(]+)?(\\([^)]+\\))?", 2): $article//cite
-  @append_to($cover): $article//figcaption
+  @append_to($cover): $article//div[has-class("hero-img-caption")]/figcaption
   
   # Add video to body if it exists
   @prepend_to($body): $article//div[@id="modalVideo"]//iframe
@@ -47,6 +47,12 @@ $article: //div[has-class("article")]
     @combine: ($mbody/p)[2]
   }
   @wrap(<b>): $qa//p[has-class("question")]
+  
+  @debug: //figure
+  
+  # Create slideshows
+  <slideshow>: //div[has-class("carousel")]
+  <figure>: //slideshow[has-class("item")]
   
   # Cleanup unused stuff
   @remove: $article//div[has-class("sticy-share-block")]

@@ -1,22 +1,69 @@
-~version: "2.0"
+~version: "2.1"
 
 $article: //article
+$static: //div[has-class("tdc-content-wrap")]
+$article?: $static
 
 @if($article) {
   $header: $article//div[has-class("td-post-header")]/header
   
   # Select the title
-  $title: $header/h1[has-class("entry-title")]
-  
+  $title: //h1[has-class("entry-title")]
+
   # Find author name and publishing date
   $author: $article//div[has-class("td-post-author-name")]/a
   $author_url: $author/@href
   $published_date: $header//time/@datetime
   
   # Find and fullsize the cover
-  $cover_img: $article//div[has-class("td-post-featured-image")]/img
-  @match("(.+) 640w", 1): $cover_img/@srcset
+  $cover_figure: $article//div[has-class("td-post-featured-image")]/figure
+  @if($cover_figure) {
+    $cover_img: $cover_figure/img
+  }
+  @if_not( $cover_figure ) {
+    $cover_figure: $article//div[has-class("td-post-featured-image")]/img
+    $cover_img: $article//div[has-class("td-post-featured-image")]/img
+  }
+  @match("\\s*([^,]+) [0-9]+w", 1): $cover_img/@srcset
   @set_attr("src", @srcset): $cover_img
+  $cover: $cover_figure
+  
+  # Create slideshows
+  $slideshows: $article//div[has-class("td-gallery")]
+  $slideshows+: $article//div[has-class("gallery")]
+  @debug: $slideshows
+  <slideshow>: $slideshows//div[has-class("post_td_gallery")]  
+  <slideshow>: $slideshows[has-class("gallery")]
+  $slideshows+: $article//slideshow
+  #@match("\\s*([^,]+) 1024w", 1): $slideshows//img/@srcset
+  #@set_attr("src", @srcset): $slideshows//img
+  <figcaption>: $slideshows//div[has-class("td-gallery-title")]
+  <cite>: //*[has-class("td-gallery-slide-copywrite")]
+  
+  # Convert weird tags
+  @if_not( $static ) {
+    <blockquote>: $article//address
+  }
+  @if( $static ) {
+    <i>: $article//address
+    <div>: $article//aside
+  }
+  
+  # Fullsize other images
+  @replace("\\.thumbnail\\.jpg", ".jpg"): $article//img/@src
+  
+  # Create related
+  <related>: //div[has-class("td_block_related_posts")]
+  <div>: //related/h4/a
+  @append_to($article): //related
+  
+  # Create details
+  <details>: //div[has-class("vc_tta-panel")]
+  <summary>: //details//h4
+  <span>: //summary/a
+  
+  # Create separators
+  <hr>: //div[has-class("td_block_separator")]
   
   # Remove article headers
   @remove: $article//div[has-class("entry-crumbs")]
@@ -27,6 +74,8 @@ $article: //article
   @remove: $article//footer
   @remove: $article//a[@href="https://www.facebook.com/VignaClaraBlog.it"]/ancestor::div[has-class("td-a-rec")]
   
+  # Remove ads
+  @remove: $article//a[has-class("gofollow")]
   
   # Universal nested fix
   $problems: $article
@@ -48,6 +97,17 @@ $article: //article
   $body: $article
 }
 
+@if_not( $article ) {
+  image_url: ""
+}
+
+# Do not generate category pages
+@if($static) {
+  @if($article//img[has-class("entry-thumb")]) {
+    $body: ""
+  }
+}
+
 # Set the appropriate attributes
 # Enable/Disable as needed
 title: $title
@@ -61,5 +121,5 @@ published_date: $published_date
 # document_url: $document_url
 # site_name: "sitename"
 # channel: "@channelname"
-# cover: $cover
+cover: $cover
 body: $body

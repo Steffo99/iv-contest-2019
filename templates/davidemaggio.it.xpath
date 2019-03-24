@@ -77,7 +77,6 @@ $related: $@
 @unsupported: //div[has-class("navigation")]
 
 
-@before(<iframe>): 
 # Convert to <div> all <p>s with unsupported elements somewhere inside
 @map(//div//p) {
   $p: $@
@@ -107,3 +106,4 @@ $ytvideo: //object/embed[starts-with(@src,"https://www.youtube.com")]
 @before(<iframe>, src, $ytvideo/@src): $ytvideo/..
 <div>: $@/..
 @remove: $ytvideo/..
+

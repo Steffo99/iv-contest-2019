@@ -99,4 +99,3 @@ $related_articles: //div[starts-with(@class, "td_module_related_posts")]//a[@rel
 ?exists: //span[has-class("td-search-query")]
 title: ""
 image_url: ""
-

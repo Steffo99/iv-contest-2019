@@ -48,7 +48,7 @@ $csrating: $article//div[has-class("voto-comingsoon")]
 @append(<div>, "data-rating", ./@data-rating): $csrating
 @append(@data-rating): $csrating/div[@data-rating]
 @replace("h6", ""): $csrating/@class
-@wrap(<p>): $csrating
+@wrap(<aside>): $csrating
 @append(" / 5 stelle"): $csrating/div[@data-rating]
 @remove: $article//div[@id="voto-pubblico"]
 @remove: $article//div[has-class("valutazione")]
@@ -94,6 +94,7 @@ $streaming: $article//h3[has-class("vod_type_title")]
 }
 
 # Cleanup
+@wrap(<p>): $article//div[has-class("btn-centrato-b")]
 @remove: $article//div[@id="voto-pubblico"]
 @remove: $article//span[has-class("a-button-shop")]
 @remove: $article//div[has-class("contenuto-scheda")]
@@ -102,7 +103,8 @@ $body: $article
 
 ?path: .+/news/.+
 ?path: .+/recensione/
-?path: /chi-siamo/
+#?path: /chi-siamo/
+?exists: //div[@id="contenuto-articolo"]
 ### Articles, Reviews
 
 # Find basic properties
@@ -134,15 +136,15 @@ $article: /html/realbody
 
 # Create slideshow
 $photo_containers: //div[@itemtype="http://schema.org/ImageObject"]/div[has-class("contenitore-foto")]
+$copyinfo: ($photo_containers/../div[has-class("box-dati")]/div[@itemprop="author"])[1]
+@debug: $copyinfo
 <figure>: $photo_containers
 $photo_containers: //div[@itemtype="http://schema.org/ImageObject"]/figure[has-class("contenitore-foto")]
-@append(<figcaption>, "text", "./img/@alt"): $photo_containers
+#@append(<figcaption>, "text", "./img/@alt"): $photo_containers
 @append(@text): $photo_containers/figcaption
-@append(<slideshow>, "myid", "slideshow"): $article
-$photo_slideshow: $article/slideshow[@myid="slideshow"]
-@append_to($photo_slideshow): $photo_containers
 @append_to($article): $nav
-@append_to($article): $photo_slideshow
+@append_to($article): $photo_containers
+@append_to($article): $copyinfo
 
 $body: $article
 
@@ -172,21 +174,15 @@ $seasons: $article/related[@myid="seasons"]
 ?path: /chi-siamo/
 ### Back to Articles and Reviews
 
-@append(<related>, "myid", "movies"): $article
-$related_movies: $article/related[@myid="movies"]
-@remove: $related_container_mov//a/*
-@append_to($related_movies): $related_container_mov//a
-@prepend(<h3>): $related_movies
-@append("Schede di riferimento"): $related_movies/h3
-
-?path: /chi-siamo/
-### Chi siamo hardcode
-@after(<slideshow>): //div[has-class("logo-canali")]
-$slideshow: //slideshow
-@wrap(<figure>): //div[has-class("logo-canali")]//img
-@append_to($slideshow): //div[has-class("logo-canali")]//figure
-@debug: $slideshow
-
+@if($related_container_mov//a) {
+  @append(<div>, "myid", "movies"): $article
+  $related_movies: $article/div[@myid="movies"]
+  #@remove: $related_container_mov//a/*
+  @append(<h3>): $related_movies
+  @append("Schede di riferimento"): $related_movies/h3
+  @append_to($related_movies): $related_container_mov//a
+  @set_attr("href", "./../@href"): $related_movies//img
+}
 
 ?true
 ### Back to Everything
@@ -259,6 +255,10 @@ $images: //img
 <h4>: //div[has-class("h4")]
 <h5>: //div[has-class("h5")]
 <h6>: //div[has-class("h6")]
+
+# Add image links
+$links_with_image: $article//img/ancestor::a
+@set_attr("href", "./ancestor::a/@href"): $links_with_image//img
 
 # TEST NESTED FIX
 $problems: $article
